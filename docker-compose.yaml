@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress
+    restart: always
+    ports:
+      - "8482:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_REDIS_HOST: redis  # Hostname Redis
+      WORDPRESS_REDIS_PORT: 6379
+      WORDPRESS_REDIS_PASSWORD: myredispassword  # Tambahkan password Redis
+    volumes:
+      - wordpress_data:/var/www/html
+    depends_on:
+      - db
+      - redis
+    networks:
+      - wordpress_network
+
+  db:
+    image: mariadb:latest
+    container_name: mariadb
+    restart: always
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wordpress_network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    environment:
+      - REDIS_PASSWORD=myredispassword  # Menambahkan password Redis
+    networks:
+      - wordpress_network
+
+volumes:
+  wordpress_data:
+  db_data:
+  redis_data:
+
+networks:
+  wordpress_network:
+    driver: bridge
